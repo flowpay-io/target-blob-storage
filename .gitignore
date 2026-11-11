@@ -1,5 +1,6 @@
 .DS_Store
-tests/
+__pycache__/
+.pytest_cache/
 target_blob_storage.egg-info
 .input
 .secrets
