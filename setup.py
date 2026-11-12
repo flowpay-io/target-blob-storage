@@ -12,6 +12,7 @@ setup(
     py_modules=['target_blob_storage'],
     install_requires=[
         'azure-storage-blob==12.12.0',
+        'azure-identity>=1.17.1,<2',
         'argparse==1.4.0',
         'six>=1.16.0',
         'urllib3<2.0'
