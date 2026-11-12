@@ -117,7 +117,8 @@ def upload(args):
                     except Exception as e:
                         logger.exception(f"Failed to upload {file_path} to {remote_file_path}: {e}")
                         if hasattr(e, 'reason'):
-                            raise Exception(e.reason)
+                            # Credential errors have no HTTP response, so reason can be None.
+                            raise Exception(e.reason or str(e))
                         else:
                             raise e
 

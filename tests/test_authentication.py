@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
+from azure.core.exceptions import ClientAuthenticationError
 
 import target_blob_storage as target
 
@@ -104,6 +105,16 @@ def test_upload_failure_propagates_and_releases_resources(tmp_path, clients):
         upload(tmp_path, SP_CONFIG)
     clients.client.close.assert_called_once()
     clients.credential.close.assert_called_once()
+
+
+def test_rejected_credential_reports_the_azure_message(tmp_path, clients):
+    # azure-identity raises this without an HTTP response, so it has no reason phrase.
+    (tmp_path / "transactions.jsonl").write_text("{}\n")
+    clients.client.get_blob_client.return_value.upload_blob.side_effect = ClientAuthenticationError(
+        message="AADSTS7000222: The provided client secret keys are expired.",
+    )
+    with pytest.raises(Exception, match="AADSTS7000222"):
+        upload(tmp_path, SP_CONFIG)
 
 
 def test_nested_export_keeps_forward_slashes_and_explicit_overwrite(tmp_path, clients):
