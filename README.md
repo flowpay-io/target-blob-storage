@@ -20,6 +20,9 @@ The Azure SDK obtains tokens using `ClientSecretCredential`. This mode ignores o
 strings/account keys and never falls back if authentication fails. The processor identity must
 have write access to the output container. Keep credentials in protected target configuration.
 Register `azure_client_secret` as a secret in the host's connector configuration before rollout.
+Because one service principal usually serves every tenant, the three `azure_*` fields may instead
+be set once as the environment variables `AZURE_TENANT_ID`, `AZURE_CLIENT_ID` and
+`AZURE_CLIENT_SECRET`; a value in the settings wins over the variable.
 
 Omitting `auth_method` (or using `legacy`) preserves the existing connection-string/account-key
 behavior. This patch does not change any shared target settings. Clients and credentials close

@@ -47,15 +47,36 @@ def parse_args():
     return args
 
 
+# The service principal is shared by every tenant, so it may be set once as environment variables.
+CREDENTIAL_VARIABLES = {
+    "azure_tenant_id": "AZURE_TENANT_ID",
+    "azure_client_id": "AZURE_CLIENT_ID",
+    "azure_client_secret": "AZURE_CLIENT_SECRET",
+}
+
+
+def with_credential_environment(config):
+    """Settings with missing service-principal fields filled from the environment; settings win."""
+    applied = dict(config)
+    for setting, variable in CREDENTIAL_VARIABLES.items():
+        current = applied.get(setting)
+        if (not isinstance(current, str) or not current.strip()) and os.environ.get(variable, "").strip():
+            applied[setting] = os.environ[variable]
+    return applied
+
+
 @contextmanager
 def storage_client(config):
     """Select authentication explicitly and close clients even when an upload fails."""
     with ExitStack() as resources:
         method = config.get("auth_method", "legacy")
         if method == "service_principal":
+            config = with_credential_environment(config)
             for field in ("account_url", "azure_tenant_id", "azure_client_id", "azure_client_secret"):
                 if not isinstance(config.get(field), str) or not config[field].strip():
-                    raise ValueError(f"{field} is required for service_principal authentication")
+                    variable = CREDENTIAL_VARIABLES.get(field)
+                    alternative = f" (setting or {variable} environment variable)" if variable else ""
+                    raise ValueError(f"{field}{alternative} is required for service_principal authentication")
             endpoint = urlsplit(config["account_url"])
             if (endpoint.scheme != "https" or not endpoint.hostname or endpoint.username or endpoint.password
                     or endpoint.query or endpoint.fragment or endpoint.path not in ("", "/")):
